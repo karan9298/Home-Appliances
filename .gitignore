@@ -1,0 +1,56 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Java and Spring Boot
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Eclipse
+.project
+.classpath
+.settings/
+target/
+
+# MacOS
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Temporary Files
+*.swp
+*.tmp
+*.bak
+*.old
+
+# Compiled source
+/dist/
+/build/
+/bin/
+
+# IDE specific
+.vscode/
+*.vscode
+
+# Environment Variables
+.env
+
+# Package files
+package-lock.json
+yarn.lock
+
+# Coverage
+coverage/
