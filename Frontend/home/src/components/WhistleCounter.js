@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 
-const WhistleCounter = ({ predefinedCount, onNotify }) => {
-  const [count, setCount] = useState(() => {
-    const savedCount = localStorage.getItem('whistleCount');
-    return savedCount ? parseInt(savedCount, 10) : 0;
-  });
+const WhistleCounter = ({ predefinedCount, onNotify, reset }) => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (reset) {
+      setCount(0);
+      localStorage.removeItem('whistleCount');
+    }
+  }, [reset]);
 
   useEffect(() => {
     localStorage.setItem('whistleCount', count);
@@ -43,7 +47,7 @@ const WhistleCounter = ({ predefinedCount, onNotify }) => {
               isWhistling = true;
               whistleStartTime = Date.now();
             } else if (Date.now() - whistleStartTime > 2000) {
-              setCount(count + 1);
+              setCount(prevCount => (prevCount + 1));
               isWhistling = false;
               whistleStartTime = null;
             }
@@ -62,14 +66,10 @@ const WhistleCounter = ({ predefinedCount, onNotify }) => {
     };
 
     startListening();
-  }, [count]);
+  }, []);
 
   const handleWhistle = () => {
-    setCount(count + 1);
-  };
-
-  const resetCount = () => {
-    setCount(0);
+    setCount(prevCount => (prevCount + 1));
   };
 
   return (
@@ -77,7 +77,6 @@ const WhistleCounter = ({ predefinedCount, onNotify }) => {
       <h2>Whistle Counter</h2>
       <p>Count: {count}</p>
       <button onClick={handleWhistle}>Whistle</button>
-      <button onClick={resetCount}>Reset</button>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Home.css';
 import WhistleCounter from '../components/WhistleCounter';
 
@@ -6,14 +6,18 @@ const Home = () => {
   const [isCookingStarted, setIsCookingStarted] = useState(false);
   const [audioContext, setAudioContext] = useState(null);
   const [microphoneStream, setMicrophoneStream] = useState(null);
+  const [resetCounter, setResetCounter] = useState(false);
+  const notificationAudioRef = useRef(null);
 
   const handleStartCooking = () => {
     if (isCookingStarted) {
       stopListening();
       setIsCookingStarted(false);
+      setResetCounter(true); // Reset counter when stopping
     } else {
       startListening();
       setIsCookingStarted(true);
+      setResetCounter(false); // Ensure counter is not reset when starting
     }
   };
 
@@ -35,8 +39,7 @@ const Home = () => {
 
       const detectWhistle = () => {
         analyser.getByteTimeDomainData(dataArray);
-        
-        // Simple frequency detection logic
+
         const buffer = new Float32Array(analyser.frequencyBinCount);
         analyser.getFloatFrequencyData(buffer);
 
@@ -48,10 +51,14 @@ const Home = () => {
             isWhistling = true;
             whistleStartTime = Date.now();
           } else if (Date.now() - whistleStartTime > 2000) {
-            // Increment count
             isWhistling = false;
             whistleStartTime = null;
+            if (notificationAudioRef.current) {
+              notificationAudioRef.current.pause();
+              notificationAudioRef.current.currentTime = 0;
+            }
             const audio = new Audio('/Audios/cheerful-happy-cooking-food-music-244393.mp3');
+            notificationAudioRef.current = audio;
             audio.play();
           }
         } else {
@@ -81,6 +88,11 @@ const Home = () => {
       microphoneStream.getTracks().forEach(track => track.stop());
       setMicrophoneStream(null);
     }
+
+    if (notificationAudioRef.current) {
+      notificationAudioRef.current.pause();
+      notificationAudioRef.current.currentTime = 0;
+    }
   };
 
   useEffect(() => {
@@ -91,6 +103,11 @@ const Home = () => {
 
       if (microphoneStream) {
         microphoneStream.getTracks().forEach(track => track.stop());
+      }
+
+      if (notificationAudioRef.current) {
+        notificationAudioRef.current.pause();
+        notificationAudioRef.current.currentTime = 0;
       }
     };
   }, [audioContext, microphoneStream]);
@@ -104,9 +121,14 @@ const Home = () => {
       </button>
       {isCookingStarted && (
         <WhistleCounter predefinedCount={3} onNotify={() => {
+          if (notificationAudioRef.current) {
+            notificationAudioRef.current.pause();
+            notificationAudioRef.current.currentTime = 0;
+          }
           const audio = new Audio('/Audios/cheerful-happy-cooking-food-music-244393.mp3');
+          notificationAudioRef.current = audio;
           audio.play();
-        }} />
+        }} reset={resetCounter} />
       )}
     </div>
   );
