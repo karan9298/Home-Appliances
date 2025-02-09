@@ -15,7 +15,7 @@ const WhistleCounter = ({ predefinedCount, onNotify, reset }) => {
 
   useEffect(() => {
     localStorage.setItem('whistleCount', count);
-    if (count === predefinedCount) {
+    if ((count/2) >= predefinedCount) {
       onNotify();
     }
   }, [count, predefinedCount, onNotify]);
