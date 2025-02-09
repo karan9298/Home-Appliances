@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 
-const WhistleCounter = ({ predefinedCount, onNotify }) => {
+const WhistleCounter = ({ predefinedCount, onNotify, reset }) => {
   const [count, setCount] = useState(() => {
     const savedCount = localStorage.getItem('whistleCount');
     return savedCount ? parseInt(savedCount, 10) : 0;
   });
+
+  useEffect(() => {
+    if (reset) {
+      setCount(0);
+      localStorage.removeItem('whistleCount');
+    }
+  }, [reset]);
 
   useEffect(() => {
     localStorage.setItem('whistleCount', count);
@@ -27,11 +34,11 @@ const WhistleCounter = ({ predefinedCount, onNotify }) => {
 
         let isWhistling = false;
         let whistleStartTime = null;
+        let whistleDetected = false;
 
         const detectWhistle = () => {
           analyser.getByteTimeDomainData(dataArray);
-          
-          // Simple frequency detection logic
+
           const buffer = new Float32Array(analyser.frequencyBinCount);
           analyser.getFloatFrequencyData(buffer);
 
@@ -42,14 +49,14 @@ const WhistleCounter = ({ predefinedCount, onNotify }) => {
             if (!isWhistling) {
               isWhistling = true;
               whistleStartTime = Date.now();
-            } else if (Date.now() - whistleStartTime > 2000) {
-              setCount(count + 1);
-              isWhistling = false;
-              whistleStartTime = null;
+            } else if (Date.now() - whistleStartTime > 2000 && !whistleDetected) {
+              setCount(prevCount => prevCount + 1);
+              whistleDetected = true;
             }
           } else {
             isWhistling = false;
             whistleStartTime = null;
+            whistleDetected = false;
           }
 
           requestAnimationFrame(detectWhistle);
@@ -62,22 +69,17 @@ const WhistleCounter = ({ predefinedCount, onNotify }) => {
     };
 
     startListening();
-  }, [count]);
+  }, []);
 
   const handleWhistle = () => {
-    setCount(count + 1);
-  };
-
-  const resetCount = () => {
-    setCount(0);
+    setCount(prevCount => prevCount + 1);
   };
 
   return (
     <div>
       <h2>Whistle Counter</h2>
-      <p>Count: {count}</p>
+      <p>Count: {count/2}</p>
       <button onClick={handleWhistle}>Whistle</button>
-      <button onClick={resetCount}>Reset</button>
     </div>
   );
 };

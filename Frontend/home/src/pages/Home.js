@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Home.css';
 import WhistleCounter from '../components/WhistleCounter';
 
@@ -6,11 +6,13 @@ const Home = () => {
   const [isCookingStarted, setIsCookingStarted] = useState(false);
   const [audioContext, setAudioContext] = useState(null);
   const [microphoneStream, setMicrophoneStream] = useState(null);
+  const notificationAudioRef = useRef(null); // Reference to the audio element
 
   const handleStartCooking = () => {
     if (isCookingStarted) {
       stopListening();
       setIsCookingStarted(false);
+      localStorage.setItem('whistleCount', 0); // Reset count in local storage
     } else {
       startListening();
       setIsCookingStarted(true);
@@ -35,8 +37,7 @@ const Home = () => {
 
       const detectWhistle = () => {
         analyser.getByteTimeDomainData(dataArray);
-        
-        // Simple frequency detection logic
+
         const buffer = new Float32Array(analyser.frequencyBinCount);
         analyser.getFloatFrequencyData(buffer);
 
@@ -48,10 +49,14 @@ const Home = () => {
             isWhistling = true;
             whistleStartTime = Date.now();
           } else if (Date.now() - whistleStartTime > 2000) {
-            // Increment count
             isWhistling = false;
             whistleStartTime = null;
+            if (notificationAudioRef.current) {
+              notificationAudioRef.current.pause();
+              notificationAudioRef.current.currentTime = 0;
+            }
             const audio = new Audio('/Audios/cheerful-happy-cooking-food-music-244393.mp3');
+            notificationAudioRef.current = audio;
             audio.play();
           }
         } else {
@@ -81,9 +86,17 @@ const Home = () => {
       microphoneStream.getTracks().forEach(track => track.stop());
       setMicrophoneStream(null);
     }
+
+    if (notificationAudioRef.current) {
+      notificationAudioRef.current.pause();
+      notificationAudioRef.current.currentTime = 0;
+    }
   };
 
   useEffect(() => {
+    // Reset count in local storage on component mount (page refresh)
+    localStorage.setItem('whistleCount', 0);
+
     return () => {
       if (audioContext && audioContext.state !== 'closed') {
         audioContext.close();
@@ -91,6 +104,11 @@ const Home = () => {
 
       if (microphoneStream) {
         microphoneStream.getTracks().forEach(track => track.stop());
+      }
+
+      if (notificationAudioRef.current) {
+        notificationAudioRef.current.pause();
+        notificationAudioRef.current.currentTime = 0;
       }
     };
   }, [audioContext, microphoneStream]);
@@ -103,10 +121,19 @@ const Home = () => {
         {isCookingStarted ? 'STOP NOW?' : 'Start Cooking'}
       </button>
       {isCookingStarted && (
-        <WhistleCounter predefinedCount={3} onNotify={() => {
-          const audio = new Audio('/Audios/cheerful-happy-cooking-food-music-244393.mp3');
-          audio.play();
-        }} />
+        <WhistleCounter 
+          predefinedCount={3} 
+          onNotify={() => {
+            if (notificationAudioRef.current) {
+              notificationAudioRef.current.pause();
+              notificationAudioRef.current.currentTime = 0;
+            }
+            const audio = new Audio('/Audios/cheerful-happy-cooking-food-music-244393.mp3');
+            notificationAudioRef.current = audio;
+            audio.play();
+          }} 
+          reset={false}
+        />
       )}
     </div>
   );
